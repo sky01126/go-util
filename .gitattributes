@@ -1,0 +1,60 @@
+# 텍스트 파일 기본 설정
+* text=auto
+
+# 줄바꿈 문자 설정
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.svg text eol=lf
+
+# Windows 배치 파일은 CRLF 유지
+*.cmd text eol=crlf
+*.bat text eol=crlf
+/mvnw text eol=lf
+
+# 바이너리 파일 설정
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+
+# 압축 파일
+*.zip binary
+*.tar binary
+*.gz binary
+*.rar binary
+
+# 문서 파일
+*.pdf binary
+
+# 실행 파일
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# 로그 파일 (압축)
+*.log text eol=lf
+
+# 설정 파일
+.env* text eol=lf
+*.config text eol=lf
+*.conf text eol=lf
+
+# 임시 파일 무시
+*.tmp text eol=lf
+*.temp text eol=lf
+*.swp text eol=lf
+*.swo text eol=lf
+*~ text eol=lf
