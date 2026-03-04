@@ -93,3 +93,29 @@ func TestDirs(t *testing.T) {
 		t.Errorf("Remove failed: directory should be deleted")
 	}
 }
+
+func TestMisc(t *testing.T) {
+	// 1. PathSeparator 테스트
+	if PathSeparator() == "" {
+		t.Errorf("PathSeparator() returned empty string")
+	}
+
+	// 2. Join 테스트
+	joined := Join("a", "b", "c")
+	expected := "a/b/c"
+	if os.PathSeparator == '\\' {
+		expected = "a\\b\\c"
+	}
+	if joined != expected {
+		t.Errorf("Join failed: expected %s, got %s", expected, joined)
+	}
+
+	// 3. UserHomeDir 테스트
+	home, err := UserHomeDir()
+	if err != nil {
+		t.Errorf("UserHomeDir failed: %v", err)
+	}
+	if home == "" {
+		t.Errorf("UserHomeDir returned empty string")
+	}
+}

@@ -13,7 +13,7 @@ import (
 
 // Uncompress 압축 파일을 대상 디렉토리에 해제한다.
 // 파일 이름을 통해 압축 형식을 자동으로 감지한다.
-func Uncompress(source, destination string) error {
+func Uncompress(ctx context.Context, source, destination string) error {
 	if source == "" {
 		return fmt.Errorf("source path is empty")
 	}
@@ -23,14 +23,9 @@ func Uncompress(source, destination string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			fmt.Printf("Error closing file: %v\n", err)
-		}
-	}(f)
-
-	ctx := context.Background()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	// 형식 식별
 	format, _, err := archiver.Identify(ctx, source, f)
@@ -49,7 +44,7 @@ func Uncompress(source, destination string) error {
 	}
 
 	// 압축 해제 핸들러
-	handler := func(_ context.Context, archFile archiver.FileInfo) error {
+	handler := func(ctx context.Context, archFile archiver.FileInfo) error {
 		targetPath := filepath.Join(destination, archFile.NameInArchive)
 
 		if archFile.IsDir() {
@@ -65,23 +60,17 @@ func Uncompress(source, destination string) error {
 		if err != nil {
 			return err
 		}
-		defer func(out *os.File) {
-			err := out.Close()
-			if err != nil {
-				fmt.Printf("Error closing file: %v\n", err)
-			}
-		}(out)
+		defer func() {
+			_ = out.Close()
+		}()
 
 		in, err := archFile.Open()
 		if err != nil {
 			return err
 		}
-		defer func(in fs.File) {
-			err := in.Close()
-			if err != nil {
-				fmt.Printf("Error closing file: %v\n", err)
-			}
-		}(in)
+		defer func() {
+			_ = in.Close()
+		}()
 
 		_, err = io.Copy(out, in)
 		return err
@@ -96,7 +85,7 @@ func Uncompress(source, destination string) error {
 
 // Compress 파일 또는 디렉토리들을 압축한다.
 // 대상 파일의 확장자를 통해 압축 형식을 자동으로 결정한다.
-func Compress(sources []string, destination string) error {
+func Compress(ctx context.Context, sources []string, destination string) error {
 	if len(sources) == 0 {
 		return fmt.Errorf("no sources provided for compression")
 	}
@@ -177,14 +166,11 @@ func Compress(sources []string, destination string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-			fmt.Printf("Error closing file: %v\n", err)
-		}
-	}(out)
+	defer func() {
+		_ = out.Close()
+	}()
 
-	if err := ar.Archive(context.Background(), out, files); err != nil {
+	if err := ar.Archive(ctx, out, files); err != nil {
 		return fmt.Errorf("failed to create archive %s: %w", destination, err)
 	}
 

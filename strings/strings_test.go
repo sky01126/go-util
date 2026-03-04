@@ -78,6 +78,10 @@ func TestEquals(t *testing.T) {
 	if !CI.Equals("abc", "ABC") {
 		t.Errorf("CI.Equals(\"abc\", \"ABC\") should be true")
 	}
+	var nilPolicy *CasePolicy
+	if !nilPolicy.Equals("abc", "abc") {
+		t.Errorf("nilPolicy.Equals should behave like CS")
+	}
 }
 
 func TestEqualsAny(t *testing.T) {
@@ -92,5 +96,9 @@ func TestEqualsAny(t *testing.T) {
 	}
 	if CS.EqualsAny("abc") {
 		t.Errorf("CS.EqualsAny with no search strings should be false")
+	}
+	var nilPolicy *CasePolicy
+	if !nilPolicy.EqualsAny("abc", "abc", "def") {
+		t.Errorf("nilPolicy.EqualsAny should behave like CS")
 	}
 }

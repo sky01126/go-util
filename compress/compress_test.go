@@ -30,7 +30,7 @@ func TestCompressAndUncompress(t *testing.T) {
 	zipFile := filepath.Join(tmpDir, "test.zip")
 
 	// 1. 압축 테스트
-	err = Compress([]string{testFile}, zipFile)
+	err = Compress(t.Context(), []string{testFile}, zipFile)
 	if err != nil {
 		t.Fatalf("Compress failed: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestCompressAndUncompress(t *testing.T) {
 
 	// 2. 해제 테스트
 	extractDir := filepath.Join(tmpDir, "extracted")
-	err = Uncompress(zipFile, extractDir)
+	err = Uncompress(t.Context(), zipFile, extractDir)
 	if err != nil {
 		t.Fatalf("Uncompress failed: %v", err)
 	}

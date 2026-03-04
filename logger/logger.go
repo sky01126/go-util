@@ -23,7 +23,8 @@ var (
 // InitLogger 는 전역 zap 로거를 초기화한다.
 // logPath 가 비어 있으면 콘솔에만 기록한다.
 // APP_ENV 환경 변수가 비어 있거나 "local"이 아닌 경우 지정된 logPath 파일과 콘솔에 로깅한다.
-func InitLogger(logPath string) {
+func InitLogger(logPath string) error {
+	var err error
 	once.Do(func() {
 		env := os.Getenv("APP_ENV")
 		var config zap.Config
@@ -53,19 +54,18 @@ func InitLogger(logPath string) {
 			config.ErrorOutputPaths = errOutputs
 		}
 
-		var err error
 		logger, err = config.Build(options...)
-		if err != nil {
-			panic(err)
+		if err == nil {
+			sugar = logger.Sugar()
 		}
-		sugar = logger.Sugar()
 	})
+	return err
 }
 
 // L 은 초기화된 전역 zap 로거를 반환한다.
 func L() *zap.Logger {
 	if logger == nil {
-		InitLogger("")
+		_ = InitLogger("")
 	}
 	return logger
 }
@@ -73,7 +73,7 @@ func L() *zap.Logger {
 // S 는 초기화된 전역 zap SugaredLogger를 반환한다.
 func S() *zap.SugaredLogger {
 	if sugar == nil {
-		InitLogger("")
+		_ = InitLogger("")
 	}
 	return sugar
 }
@@ -94,7 +94,7 @@ func WithContext(ctx context.Context, l *zap.Logger) context.Context {
 // SetLevel 은 로깅 레벨을 동적으로 변경한다.
 func SetLevel(l zapcore.Level) {
 	if logger == nil {
-		InitLogger("")
+		_ = InitLogger("")
 	}
 	atom.SetLevel(l)
 }

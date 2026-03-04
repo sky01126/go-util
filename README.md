@@ -25,7 +25,7 @@ go get github.com/sky01126/go-util
 ```go
 import "github.com/sky01126/go-util"
 
-fmt.Println(go_util.Version) // "0.1.1"
+fmt.Println(go_util.Version) // "0.1.0"
 ```
 
 #### 2. VERSION 파일 확인
@@ -75,13 +75,18 @@ err = files.WriteString("hello.txt", "Hello Go!")
 파일 및 디렉토리의 압축/해제를 제공합니다.
 
 ```go
-import "github.com/sky01126/go-util/compress"
+import (
+    "context"
+    "github.com/sky01126/go-util/compress"
+)
+
+ctx := context.Background()
 
 // 압축 파일 해제
-err := compress.Uncompress("archive.zip", "./extracted")
+err := compress.Uncompress(ctx, "archive.zip", "./extracted")
 
 // 파일 압축
-err = compress.Compress([]string{"file1.txt", "dir1"}, "archive.zip")
+err = compress.Compress(ctx, []string{"file1.txt", "dir1"}, "archive.zip")
 ```
 
 #### Logger 유틸리티
@@ -95,7 +100,9 @@ import (
 )
 
 // 로거 초기화 (APP_ENV=production 인 경우 파일 로깅 활성화 가능)
-logger.InitLogger("app.log")
+if err := logger.InitLogger("app.log"); err != nil {
+    panic(err)
+}
 defer logger.Sync()
 
 // 기본 로깅
@@ -103,7 +110,8 @@ logger.Info("애플리케이션 시작", zap.String("version", "1.0.0"))
 logger.Error("에러 발생", zap.Error(err))
 
 // 컨텍스트 기반 로깅
-ctx := logger.WithContext(ctx, logger.With(zap.String("request_id", "req-123")))
+ctx := context.Background()
+ctx = logger.WithContext(ctx, logger.With(zap.String("request_id", "req-123")))
 l := logger.FromContext(ctx)
 l.Info("요청 처리 완료")
 

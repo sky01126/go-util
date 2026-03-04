@@ -81,9 +81,9 @@ func Copy(src, dst string) (err error) {
 		return fmt.Errorf("open source file %s: %w", src, err)
 	}
 	defer func() {
-		err := sourceFile.Close()
-		if err != nil {
-			fmt.Printf("Error closing source file: %v\n", err)
+		closeErr := sourceFile.Close()
+		if err == nil && closeErr != nil {
+			err = fmt.Errorf("close source file %s: %w", src, closeErr)
 		}
 	}()
 

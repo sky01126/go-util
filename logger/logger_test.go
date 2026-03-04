@@ -9,10 +9,21 @@ import (
 )
 
 func TestInitLogger(t *testing.T) {
-	InitLogger("")
+	err := InitLogger("")
+	if err != nil {
+		t.Errorf("InitLogger failed: %v", err)
+	}
 	if L() == nil {
 		t.Error("로거가 초기화되지 않았습니다")
 	}
+}
+
+func TestSugarLogger(t *testing.T) {
+	_ = InitLogger("")
+	if S() == nil {
+		t.Error("Sugar 로거가 초기화되지 않았습니다")
+	}
+	S().Infof("Sugar 로거 테스트: %s", "hello")
 }
 
 func TestSetLevel(t *testing.T) {

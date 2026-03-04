@@ -18,7 +18,7 @@ var (
 
 // Equals 문자열이 동일한지 비교한다.
 func (cp *CasePolicy) Equals(str1, str2 string) bool {
-	if cp.caseSensitive {
+	if cp == nil || cp.caseSensitive {
 		return str1 == str2
 	}
 	return strings.EqualFold(str1, str2)
@@ -26,6 +26,9 @@ func (cp *CasePolicy) Equals(str1, str2 string) bool {
 
 // EqualsAny 문자열이 여러 대상 중 하나와 동일한지 확인한다.
 func (cp *CasePolicy) EqualsAny(str string, searchStrings ...string) bool {
+	if cp == nil {
+		cp = CS
+	}
 	for _, s := range searchStrings {
 		if cp.Equals(str, s) {
 			return true
