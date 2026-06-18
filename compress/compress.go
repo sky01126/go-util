@@ -45,35 +45,7 @@ func Uncompress(ctx context.Context, source, destination string) error {
 
 	// 압축 해제 핸들러
 	handler := func(ctx context.Context, archFile archiver.FileInfo) error {
-		targetPath := filepath.Join(destination, archFile.NameInArchive)
-
-		if archFile.IsDir() {
-			return os.MkdirAll(targetPath, archFile.Mode())
-		}
-
-		// 부모 디렉토리 생성
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-			return err
-		}
-
-		out, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, archFile.Mode())
-		if err != nil {
-			return err
-		}
-		defer func() {
-			_ = out.Close()
-		}()
-
-		in, err := archFile.Open()
-		if err != nil {
-			return err
-		}
-		defer func() {
-			_ = in.Close()
-		}()
-
-		_, err = io.Copy(out, in)
-		return err
+		return extractArchiveFile(destination, archFile)
 	}
 
 	if err := ex.Extract(ctx, f, handler); err != nil {
@@ -81,6 +53,39 @@ func Uncompress(ctx context.Context, source, destination string) error {
 	}
 
 	return nil
+}
+
+// extractArchiveFile 압축 항목 하나를 대상 경로에 기록한다.
+func extractArchiveFile(destination string, archFile archiver.FileInfo) error {
+	targetPath := filepath.Join(destination, archFile.NameInArchive)
+
+	if archFile.IsDir() {
+		return os.MkdirAll(targetPath, archFile.Mode())
+	}
+
+	// 부모 디렉토리 생성
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return err
+	}
+
+	out, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, archFile.Mode())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = out.Close()
+	}()
+
+	in, err := archFile.Open()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = in.Close()
+	}()
+
+	_, err = io.Copy(out, in)
+	return err
 }
 
 // Compress 파일 또는 디렉토리들을 압축한다.
@@ -93,73 +98,14 @@ func Compress(ctx context.Context, sources []string, destination string) error {
 		return fmt.Errorf("destination path is empty")
 	}
 
-	// v4에서 확장자로 포맷 결정
-	var format archiver.Format
-	ext := filepath.Ext(destination)
-	switch ext {
-	case ".zip":
-		format = archiver.Zip{}
-	case ".tar":
-		format = archiver.Tar{}
-	case ".gz", ".tgz":
-		format = archiver.Archive{
-			Compression: archiver.Gz{},
-			Archival:    archiver.Tar{},
-		}
-	case ".bz2":
-		format = archiver.Archive{
-			Compression: archiver.Bz2{},
-			Archival:    archiver.Tar{},
-		}
-	case ".xz":
-		format = archiver.Archive{
-			Compression: archiver.Xz{},
-			Archival:    archiver.Tar{},
-		}
-	case ".lz4":
-		format = archiver.Archive{
-			Compression: archiver.Lz4{},
-			Archival:    archiver.Tar{},
-		}
-	default:
-		return fmt.Errorf("unsupported archive format: %s", ext)
+	ar, err := resolveArchiveFormat(destination)
+	if err != nil {
+		return err
 	}
 
-	ar, ok := format.(archiver.Archiver)
-	if !ok {
-		return fmt.Errorf("format %s does not support archiving", destination)
-	}
-
-	// 파일 맵 생성
-	var files []archiver.FileInfo
-	for _, src := range sources {
-		absSrc, err := filepath.Abs(src)
-		if err != nil {
-			return fmt.Errorf("failed to get absolute path for %s: %w", src, err)
-		}
-
-		err = filepath.Walk(absSrc, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			relPath, err := filepath.Rel(filepath.Dir(absSrc), path)
-			if err != nil {
-				return err
-			}
-
-			currPath := path
-			files = append(files, archiver.FileInfo{
-				FileInfo:      info,
-				NameInArchive: relPath,
-				Open: func() (fs.File, error) {
-					return os.Open(currPath)
-				},
-			})
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("failed to walk source %s: %w", src, err)
-		}
+	files, err := buildFileList(sources)
+	if err != nil {
+		return err
 	}
 
 	out, err := os.Create(destination)
@@ -177,11 +123,73 @@ func Compress(ctx context.Context, sources []string, destination string) error {
 	return nil
 }
 
+// resolveArchiveFormat 대상 파일 확장자로 압축 형식을 결정한다.
+func resolveArchiveFormat(destination string) (archiver.Archiver, error) {
+	var format archiver.Format
+	ext := filepath.Ext(destination)
+	switch ext {
+	case ".zip":
+		format = archiver.Zip{}
+	case ".tar":
+		format = archiver.Tar{}
+	case ".gz", ".tgz":
+		format = archiver.Archive{Compression: archiver.Gz{}, Archival: archiver.Tar{}}
+	case ".bz2":
+		format = archiver.Archive{Compression: archiver.Bz2{}, Archival: archiver.Tar{}}
+	case ".xz":
+		format = archiver.Archive{Compression: archiver.Xz{}, Archival: archiver.Tar{}}
+	case ".lz4":
+		format = archiver.Archive{Compression: archiver.Lz4{}, Archival: archiver.Tar{}}
+	default:
+		return nil, fmt.Errorf("unsupported archive format: %s", ext)
+	}
+
+	ar, ok := format.(archiver.Archiver)
+	if !ok {
+		return nil, fmt.Errorf("format %s does not support archiving", destination)
+	}
+	return ar, nil
+}
+
+// buildFileList 소스 경로들을 순회해 압축 대상 파일 목록을 만든다.
+func buildFileList(sources []string) ([]archiver.FileInfo, error) {
+	var files []archiver.FileInfo
+	for _, src := range sources {
+		absSrc, err := filepath.Abs(src)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get absolute path for %s: %w", src, err)
+		}
+
+		err = filepath.Walk(absSrc, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			relPath, err := filepath.Rel(filepath.Dir(absSrc), path)
+			if err != nil {
+				return err
+			}
+
+			files = append(files, archiver.FileInfo{
+				FileInfo:      info,
+				NameInArchive: relPath,
+				Open: func() (fs.File, error) {
+					return os.Open(path)
+				},
+			})
+			return nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to walk source %s: %w", src, err)
+		}
+	}
+	return files, nil
+}
+
 // IsSupported 지원되는 압축 형식인지 확인한다.
 func IsSupported(filename string) bool {
 	ext := filepath.Ext(filename)
 	switch ext {
-	case ".zip", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".lz4", ".sz", ".br":
+	case ".zip", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".lz4":
 		return true
 	}
 	return false
