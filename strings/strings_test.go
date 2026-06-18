@@ -102,3 +102,87 @@ func TestEqualsAny(t *testing.T) {
 		t.Errorf("nilPolicy.EqualsAny should behave like CS")
 	}
 }
+
+func TestIsNotEmpty(t *testing.T) {
+	if IsNotEmpty("") {
+		t.Errorf("IsNotEmpty(\"\") should be false")
+	}
+	if !IsNotEmpty(" ") {
+		t.Errorf("IsNotEmpty(\" \") should be true")
+	}
+	if !IsNotEmpty("abc") {
+		t.Errorf("IsNotEmpty(\"abc\") should be true")
+	}
+}
+
+func TestIsNotBlank(t *testing.T) {
+	if IsNotBlank("") {
+		t.Errorf("IsNotBlank(\"\") should be false")
+	}
+	if IsNotBlank("  \t\n") {
+		t.Errorf("IsNotBlank whitespace should be false")
+	}
+	if !IsNotBlank("abc") {
+		t.Errorf("IsNotBlank(\"abc\") should be true")
+	}
+}
+
+func TestTrim(t *testing.T) {
+	if Trim("  abc  ") != "abc" {
+		t.Errorf("Trim(\"  abc  \") should be \"abc\"")
+	}
+	if Trim("\t\nabc\n") != "abc" {
+		t.Errorf("Trim with control chars should be \"abc\"")
+	}
+	if Trim("") != "" {
+		t.Errorf("Trim(\"\") should be \"\"")
+	}
+}
+
+func TestTrimToEmpty(t *testing.T) {
+	if TrimToEmpty("  abc  ") != "abc" {
+		t.Errorf("TrimToEmpty(\"  abc  \") should be \"abc\"")
+	}
+	if TrimToEmpty("   ") != "" {
+		t.Errorf("TrimToEmpty(\"   \") should be \"\"")
+	}
+	if TrimToEmpty("") != "" {
+		t.Errorf("TrimToEmpty(\"\") should be \"\"")
+	}
+}
+
+func TestUncapitalize(t *testing.T) {
+	if Uncapitalize("Cat") != "cat" {
+		t.Errorf("Uncapitalize(\"Cat\") failed")
+	}
+	if Uncapitalize("cat") != "cat" {
+		t.Errorf("Uncapitalize(\"cat\") failed")
+	}
+	if Uncapitalize("") != "" {
+		t.Errorf("Uncapitalize(\"\") failed")
+	}
+}
+
+func TestDefaultIfEmpty(t *testing.T) {
+	if DefaultIfEmpty("", "default") != "default" {
+		t.Errorf("DefaultIfEmpty(\"\", \"default\") should be \"default\"")
+	}
+	if DefaultIfEmpty("abc", "default") != "abc" {
+		t.Errorf("DefaultIfEmpty(\"abc\", \"default\") should be \"abc\"")
+	}
+	if DefaultIfEmpty(" ", "default") != " " {
+		t.Errorf("DefaultIfEmpty(\" \", \"default\") should be \" \"")
+	}
+}
+
+func TestDefaultIfBlank(t *testing.T) {
+	if DefaultIfBlank("", "default") != "default" {
+		t.Errorf("DefaultIfBlank(\"\", \"default\") should be \"default\"")
+	}
+	if DefaultIfBlank("   ", "default") != "default" {
+		t.Errorf("DefaultIfBlank(\"   \", \"default\") should be \"default\"")
+	}
+	if DefaultIfBlank("abc", "default") != "abc" {
+		t.Errorf("DefaultIfBlank(\"abc\", \"default\") should be \"abc\"")
+	}
+}
