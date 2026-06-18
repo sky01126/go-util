@@ -1,0 +1,19 @@
+# golangci-lint v2 설정. 설치: https://golangci-lint.run/welcome/install/
+# 실행: golangci-lint run ./...
+version: "2"
+
+linters:
+  # 기본(errcheck, govet, ineffassign, staticcheck, unused)에 더해 활성화한다.
+  enable:
+    - bodyclose
+    - errorlint    # %w 래핑·errors.Is/As 오용 점검
+    - gocritic
+    - misspell
+    - revive       # 네이밍·exported GoDoc 등 스타일 점검
+    - unconvert
+    - unparam
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
