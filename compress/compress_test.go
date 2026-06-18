@@ -48,7 +48,7 @@ func TestCompressAndUncompress(t *testing.T) {
 	}
 
 	// 해제된 파일 내용 확인
-	// archiver/v3 zip은 기본적으로 파일명을 유지함
+	// archives zip은 기본적으로 파일명을 유지함
 	extractedFile := filepath.Join(extractDir, "test.txt")
 	if !files.Exists(extractedFile) {
 		t.Fatalf("Extracted file not found at %s", extractedFile)
